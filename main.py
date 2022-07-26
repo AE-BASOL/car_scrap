@@ -9,7 +9,7 @@ headers = {
 
 # %% HTTP request (store website in variable)
 site_links = []
-initLink = "https://www.arabam.com/ikinci-el/otomobil?take=50&page={}"
+initLink = "https://www.arabam.com/ikinci-el/otomobil/fiat?searchText=otomobil&take=50&page={}"
 site_General = "https://www.arabam.com"
 
 for i in range(1, 51, 1):
@@ -34,40 +34,54 @@ for i in range(0, 50, 1):
 # %% GET INSIDE LINK
 car_price = []
 car_location = []
-car_sheet = pd.DataFrame({'Inside Links': links, 'Price': car_price, 'Location': car_location})
+car_information_17 = []
+car_info = []
+ch = "/"
 
 for i in range(0, 2500, 1):
     response_inside = requests.get(links[i], headers=headers)
     soup_inside = BeautifulSoup(response_inside.content, "html.parser")
-    results_inside = soup_inside.find_all("div", class_="banner-column-detail bcd-mid-extended p10 bg-white")
+    results_inside = soup_inside.find("div", {"class": "banner-column-detail bcd-mid-extended p10 bg-white"})
     print(i)
 
-    for result_inside in results_inside:
+    if results_inside:
+        ul = results_inside.find("ul")
+        li = ul.find_all("li")
+
+        for j in li:
+            span = j.find_all("span")
+            href = j.find("a")
+            count = 0
+
+            for k in span:
+                if count % 2 == 1:
+                    car_information_17.append(k.get_text().strip())
+                count += 1
+
+        car_info.append(car_information_17)
+        car_information_17 = []
+
         car_price.append(
-            result_inside.find("span", {"class": "color-red4 font-default-plusmore bold fl"}).get_text().strip())
-        car_location.append(result_inside.find("p", {
-            "class": "one-line-overflow font-default-minus pt4 color-black2018 bold"}).get_text().strip())
+            results_inside.find("span", {"class": "color-red4 font-default-plusmore bold fl"}).get_text().strip())
 
-        car_information = []
-        data1 = result_inside.find('ul')
-        for li in data1.find_all("li"): #18 kere dönücek çünkü 18 tane li var
-            car_information.append(li.find_all(["span","a"]).text.strip())
-            car_temp = pd.DataFrame({'data': car_information})
-            T_car_temp = car_temp.T
-            T_car_temp.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', columns="3", index=False, header=True)
+        car_location.append(results_inside.find("p", {
+            "class": "one-line-overflow font-default-minus pt4 color-black2018 bold"}).get_text().strip().split(ch, 1)[0])
 
-    if len(results_inside) == 0:
+    else:
         car_price.append("none")
         car_location.append("none")
+        car_info.append("none")
 
-car_sheet.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', index=False , header=True)
+car_sheet = pd.DataFrame({'Links': links, 'Price': car_price, 'Location': car_location, 'Info': car_info})
+car_sheet.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data',
+                   index=False, header=True)
 
 # %% INSIDE RESULTS
 results_inside = soup_inside.find_all("div", class_="banner-column-detail bcd-mid-extended p10 bg-white")
 print(len(results_inside))
 
 car_information = []
-data1 = results_inside[0].find('ul')
+data1 = results_inside.find('ul')
 
 for li in data1.find_all("li"):
     car_information.append(li.find_all(["span", "a"])[0].text.strip())
@@ -88,8 +102,17 @@ if len(car_information) == 36:
 
 car_deneme = pd.DataFrame({'data': car_information})
 
-
-
 print(car_information)
 print(car_information)
-#T_car_temp.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', columns=["id","İlan Tarihi","Marka","Seri","Model","Yıl","Kilometre","Vites Tipi","Yakıt Tipi","Kasa Tipi","Motor Hacmi","Motor Gücü","Çekiş","Ort. Yakıt Tüketimi","Yakıt Deposu","Boya-değişen","Takasa Uygun:","Kimden"], index=False, header=True)
+# T_car_temp.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', columns=["id","İlan Tarihi","Marka","Seri","Model","Yıl","Kilometre","Vites Tipi","Yakıt Tipi","Kasa Tipi","Motor Hacmi","Motor Gücü","Çekiş","Ort. Yakıt Tüketimi","Yakıt Deposu","Boya-değişen","Takasa Uygun:","Kimden"], index=False, header=True)
+# %%
+data_ = pd.read_excel("car_sheet.xlsx")
+# %%
+info = data_['Info']
+# %%
+# %%
+for index, value in pd.DataFrame(info).iterrows():
+    print(value[0].split())
+    # print(i.split('\n'))
+
+# %%
