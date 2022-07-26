@@ -34,8 +34,10 @@ for i in range(0, 50, 1):
 # %% GET INSIDE LINK
 car_price = []
 car_location = []
-car_information_17 = []
 car_info = []
+car_info_none = ["none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none",
+                 "none", "none", "none", "none", "none"]
+
 ch = "/"
 
 for i in range(0, 2500, 1):
@@ -45,37 +47,49 @@ for i in range(0, 2500, 1):
     print(i)
 
     if results_inside:
-        ul = results_inside.find("ul")
-        li = ul.find_all("li")
+        li = results_inside.find("ul").find_all("li")  # kaç tane li var?
+        if len(li) == 18:
+            car_information_18 = []
+            for j in li:
+                # li içinde <a> tagını bul
+                a_link = j.find("a", {"class": "bli-particle semi-bold"})
+                if a_link:
+                    car_information_18.append(a_link.get_text().strip())
 
-        for j in li:
-            span = j.find_all("span")
-            href = j.find("a")
-            count = 0
+                # li içinde <span> tagını bul
+                span = j.find_all("span")
+                if len(span) >= 0:
+                    count = 0
+                    for k in span:
+                        if count % 2 == 1:
+                            car_information_18.append(k.get_text().strip())
+                        count += 1
+            car_info.append(car_information_18)
 
-            for k in span:
-                if count % 2 == 1:
-                    car_information_17.append(k.get_text().strip())
-                count += 1
+            car_price.append(
+                results_inside.find("span", {"class": "color-red4 font-default-plusmore bold fl"}).get_text().strip())
 
-        car_info.append(car_information_17)
-        car_information_17 = []
-
-        car_price.append(
-            results_inside.find("span", {"class": "color-red4 font-default-plusmore bold fl"}).get_text().strip())
-
-        car_location.append(results_inside.find("p", {
-            "class": "one-line-overflow font-default-minus pt4 color-black2018 bold"}).get_text().strip().split(ch, 1)[0])
+            car_location.append(results_inside.find("p", {
+                "class": "one-line-overflow font-default-minus pt4 color-black2018 bold"}).get_text().strip().split(ch,
+                                                                                                                    1)[
+                                    0])
 
     else:
         car_price.append("none")
         car_location.append("none")
-        car_info.append("none")
+        car_info.append(car_info_none)
 
-car_sheet = pd.DataFrame({'Links': links, 'Price': car_price, 'Location': car_location, 'Info': car_info})
-car_sheet.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data',
-                   index=False, header=True)
-
+# %%
+car_sheet = pd.DataFrame({'Info': car_info})
+split_df = pd.DataFrame(car_sheet['Info'].tolist())
+split_df.columns = ["id", "İlan Tarihi", "Marka", "Seri", "Model", "Yıl", "Kilometre", "Vites Tipi", "Yakıt Tipi",
+                    "Kasa Tipi", "Motor Hacmi", "Motor Gücü", "Çekiş", "Ort. Yakıt Tüketimi", "Yakıt Deposu",
+                    "Boya-değişen", "Takasa Uygun:", "Kimden"]
+car_main = pd.DataFrame({'Price': car_price, 'Location': car_location})
+df_1 = pd.concat([car_main, split_df], axis=1)
+df_1.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', index=0,
+              header=True)
+df_1.to_json(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet1.json')
 # %% INSIDE RESULTS
 results_inside = soup_inside.find_all("div", class_="banner-column-detail bcd-mid-extended p10 bg-white")
 print(len(results_inside))
