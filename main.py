@@ -1,132 +1,181 @@
 # %% import
+import pandas
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
+import csv
+import glob
+
 import openpyxl
+
+from sklearn.preprocessing import OneHotEncoder
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36'}
 
-# %% HTTP request (store website in variable)
-site_links = []
-initLink = "https://www.arabam.com/ikinci-el/otomobil/fiat?searchText=otomobil&take=50&page={}"
-site_General = "https://www.arabam.com"
 
-for i in range(1, 51, 1):
-    site_links.append(initLink.format(i))
+# %% HTTP request (store website in variable)
+def request_module(initLink):
+    site_links = []
+    for i in range(1, 51, 1):
+        site_links.append(initLink.format(i))
+    return site_links
 
 # %% HTTP REQUEST (get request)
-links = []
-for i in range(0, 50, 1):
-    response = requests.get(site_links[i], headers=headers)
-    response.status_code  # HTTP REQUEST (status code) need 200 not 429
-    soup = BeautifulSoup(response.content, "html.parser")
+def inner_request_module(page_link):
+    links = []
+    site_general = "https://www.arabam.com"
 
-    results = soup.find_all("tr", class_="listing-list-item")
-    print(len(results))
+    for i in range(0, 50, 1):
+        response = requests.get(page_link[i], headers=headers)
+        response.status_code  # HTTP REQUEST (status code) need 200 not 429
 
-    for result in results:
-        href_tags = result.find("a")["href"]
-        birlesim = site_General + href_tags
-        print(birlesim)
-        links.append(birlesim)
+        soup = BeautifulSoup(response.content, "html.parser")
+        results = soup.find_all("tr", class_="listing-list-item")
+
+        for result in results:
+            href_tags = result.find("a")["href"]
+            birlesim = site_general + href_tags
+            print(birlesim)
+            links.append(birlesim)
+
+    return links
 
 # %% GET INSIDE LINK
-car_price = []
-car_location = []
-car_info = []
-car_info_none = ["none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none",
-                 "none", "none", "none", "none", "none"]
+def getData_module(banner_link):
+    car_price = []
+    car_location = []
+    car_info = []
 
-ch = "/"
+    ch = "/"
+    ch_2 = "."
 
-for i in range(0, 2500, 1):
-    response_inside = requests.get(links[i], headers=headers)
-    soup_inside = BeautifulSoup(response_inside.content, "html.parser")
-    results_inside = soup_inside.find("div", {"class": "banner-column-detail bcd-mid-extended p10 bg-white"})
-    print(i)
+    for i in range(0, 2500, 1):
+        response_inside = requests.get(banner_link[i], headers=headers)
+        soup_inside = BeautifulSoup(response_inside.content, "html.parser")
+        results_inside = soup_inside.find("div", {"class": "banner-column-detail bcd-mid-extended p10 bg-white"})
+        print("\t{}".format(i))
 
-    if results_inside:
-        li = results_inside.find("ul").find_all("li")  # kaç tane li var?
-        if len(li) == 18:
-            car_information_18 = []
-            for j in li:
-                # li içinde <a> tagını bul
-                a_link = j.find("a", {"class": "bli-particle semi-bold"})
-                if a_link:
-                    car_information_18.append(a_link.get_text().strip())
+        if results_inside:
+            li = results_inside.find("ul").find_all("li")  # kaç tane li var?
+            if len(li) == 18:
+                car_information_18 = []
+                for j in li:
+                    # li içinde <a> tagını bul
+                    a_link = j.find("a", {"class": "bli-particle semi-bold"})
+                    if a_link:
+                        car_information_18.append(a_link.get_text().strip())
 
-                # li içinde <span> tagını bul
-                span = j.find_all("span")
-                if len(span) >= 0:
-                    count = 0
-                    for k in span:
-                        if count % 2 == 1:
-                            car_information_18.append(k.get_text().strip())
-                        count += 1
-            car_info.append(car_information_18)
+                    # li içinde <span> tagını bul
+                    span = j.find_all("span")
+                    if len(span) >= 0:
+                        count = 0
+                        for k in span:
+                            if count % 2 == 1:
+                                car_information_18.append(k.get_text().strip())
+                            count += 1
+                car_info.append(car_information_18)
 
-            car_price.append(
-                results_inside.find("span", {"class": "color-red4 font-default-plusmore bold fl"}).get_text().strip())
+                car_price.append(
+                    results_inside.find("span",{"class": "color-red4 font-default-plusmore bold fl"}).get_text().strip())
 
-            car_location.append(results_inside.find("p", {
-                "class": "one-line-overflow font-default-minus pt4 color-black2018 bold"}).get_text().strip().split(ch,
-                                                                                                                    1)[
-                                    0])
+                car_location.append(results_inside.find("p", {
+                    "class": "one-line-overflow font-default-minus pt4 color-black2018 bold"}).get_text().strip().split(ch,1)[0])
 
-    else:
-        car_price.append("none")
-        car_location.append("none")
-        car_info.append(car_info_none)
+    return car_price,car_location,car_info
+
+# %% Dataframe
+def dataFrame_module(price, location, info):
+
+    car_sheet = pd.DataFrame({'Info': info})
+    split_df = pd.DataFrame(car_sheet['Info'].tolist())
+    split_df.columns = ["id", "İlan Tarihi", "Marka", "Seri", "Model", "Yıl", "Kilometre", "Vites Tipi", "Yakıt Tipi",
+                        "Kasa Tipi", "Motor Hacmi", "Motor Gücü", "Çekiş", "Ort. Yakıt Tüketimi", "Yakıt Deposu",
+                        "Boya-değişen", "Takasa Uygun", "Kimden"]
+
+    car_main = pd.DataFrame({'Price': price, 'Location': location})
+    car_dataframe = pd.concat([car_main, split_df], axis=1)
+    car_dataframe['Price'] = car_dataframe['Price'].str.replace('TL', '')
+    car_dataframe['Price'] = car_dataframe['Price'].str.replace('.', '')
+    car_dataframe['Kilometre'] = car_dataframe['Kilometre'].str.replace('km', '')
+    car_dataframe['Kilometre'] = car_dataframe['Kilometre'].str.replace('.', '')
+    car_dataframe['Motor Hacmi'] = car_dataframe['Motor Hacmi'].str.replace('cc', '')
+    car_dataframe['Motor Gücü'] = car_dataframe['Motor Gücü'].str.replace('hp', '')
+    car_dataframe['Ort. Yakıt Tüketimi'] = car_dataframe['Ort. Yakıt Tüketimi'].str.replace(',', '.')
+    car_dataframe['Ort. Yakıt Tüketimi'] = car_dataframe['Ort. Yakıt Tüketimi'].str.replace('lt', '')
+    car_dataframe['Yakıt Deposu'] = car_dataframe['Yakıt Deposu'].str.replace('lt', '')
+
+    return car_dataframe
+
+# %% One Hot Encoding
+def oneHot_module(main_df):
+
+    df_1 = pd.get_dummies(main_df["Vites Tipi"])
+    df_2 = pd.get_dummies(main_df["Yakıt Tipi"])
+    df_3 = pd.get_dummies(main_df["Kasa Tipi"])
+    df_4 = pd.get_dummies(main_df["Çekiş"])
+    df_5 = pd.get_dummies(main_df["Takasa Uygun"])
+    df_6 = pd.get_dummies(main_df["Kimden"])
+    main_df.drop('Vites Tipi', inplace=True, axis=1)
+    main_df.drop('Yakıt Tipi', inplace=True, axis=1)
+    main_df.drop('Kasa Tipi', inplace=True, axis=1)
+    main_df.drop('Çekiş', inplace=True, axis=1)
+    main_df.drop('Takasa Uygun', inplace=True, axis=1)
+    main_df.drop('Kimden', inplace=True, axis=1)
+    concat_df = pd.concat([main_df, df_1], axis=1)
+    concat_df = pd.concat([concat_df, df_2], axis=1)
+    concat_df = pd.concat([concat_df, df_3], axis=1)
+    concat_df = pd.concat([concat_df, df_4], axis=1)
+    concat_df = pd.concat([concat_df, df_5], axis=1)
+    concat_df = pd.concat([concat_df, df_6], axis=1)
+    concat_df['Price'] = pd.to_numeric(concat_df['Price'])
+    concat_df['Yıl'] = pd.to_numeric(concat_df['Yıl'])
+    concat_df['Kilometre'] = pd.to_numeric(concat_df['Kilometre'])
+    concat_df['Motor Hacmi'] = pd.to_numeric(concat_df['Motor Hacmi'])
+    concat_df['Motor Gücü'] = pd.to_numeric(concat_df['Motor Gücü'])
+    concat_df['Ort. Yakıt Tüketimi'] = pd.to_numeric(concat_df['Ort. Yakıt Tüketimi'])
+    concat_df['Yakıt Deposu'] = pd.to_numeric(concat_df['Yakıt Deposu'])
+    return concat_df
+
+# %% Merge Csv's
+def csvMerge_module(path_csv):
+    all_files = glob.glob(path_csv + "/*.csv")
+
+    li = []
+
+    for filename in all_files:
+        df = pd.read_csv(filename, index_col=None, header=0)
+        li.append(df)
+
+    frame = pd.concat(li, axis=0, ignore_index=True)
+    frame.to_csv(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\final_df.csv', encoding="utf-8", index=None,
+                 header=True)
 
 # %%
-car_sheet = pd.DataFrame({'Info': car_info})
-split_df = pd.DataFrame(car_sheet['Info'].tolist())
-split_df.columns = ["id", "İlan Tarihi", "Marka", "Seri", "Model", "Yıl", "Kilometre", "Vites Tipi", "Yakıt Tipi",
-                    "Kasa Tipi", "Motor Hacmi", "Motor Gücü", "Çekiş", "Ort. Yakıt Tüketimi", "Yakıt Deposu",
-                    "Boya-değişen", "Takasa Uygun:", "Kimden"]
-car_main = pd.DataFrame({'Price': car_price, 'Location': car_location})
-df_1 = pd.concat([car_main, split_df], axis=1)
-df_1.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', index=0,
-              header=True)
-df_1.to_json(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet1.json')
-# %% INSIDE RESULTS
-results_inside = soup_inside.find_all("div", class_="banner-column-detail bcd-mid-extended p10 bg-white")
-print(len(results_inside))
+initLink = ["https://www.arabam.com/ikinci-el/otomobil/fiat?searchText=otomobil&take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/renault?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/hyundai?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/ford?take=50&page={}", "https://www.arabam.com/ikinci-el/otomobil/honda?take=50&page={}"]
+path = r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap' # use your path
 
-car_information = []
-data1 = results_inside.find('ul')
+for i in range(0,5,1):
+    page_link = []
+    banner_link = []
+    price = []
+    location = []
+    info = []
+    main_df = pd.DataFrame()
+    oneHotCar_df = pd.DataFrame()
 
-for li in data1.find_all("li"):
-    car_information.append(li.find_all(["span", "a"])[0].text.strip())
-    car_information.append(li.find_all(["span", "a"])[1].text.strip())
+    page_link = request_module(initLink[i])
+    print("{}.1 phase başarılı".format(i+1))
+    banner_link = inner_request_module(page_link)
+    print("{}.2 phase başarılı".format(i+1))
+    price, location, info = getData_module(banner_link)
+    print("{}.3 phase başarılı".format(i+1))
+    main_df = dataFrame_module(price, location, info)
+    print("{}.4 phase başarılı".format(i+1))
+    oneHotCar_df = oneHot_module(main_df)
+    print("{}.5 phase başarılı".format(i+1))
+    oneHotCar_df.to_csv(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet{}.csv'.format(i+1), encoding="utf-8", index=None, header=True)
 
-car_temp = pd.DataFrame({'data': car_information})
-T_car_temp = car_temp.T
-
-i = 0
-
-if len(car_information) == 36:
-    values = []
-    for i in range(36):
-        if i % 2 == 1:
-            values.append(car_information[i])
-        i += 1
-    # SQL'e verileri at
-
-car_deneme = pd.DataFrame({'data': car_information})
-
-print(car_information)
-print(car_information)
-# T_car_temp.to_excel(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet.xlsx', sheet_name='car_data', columns=["id","İlan Tarihi","Marka","Seri","Model","Yıl","Kilometre","Vites Tipi","Yakıt Tipi","Kasa Tipi","Motor Hacmi","Motor Gücü","Çekiş","Ort. Yakıt Tüketimi","Yakıt Deposu","Boya-değişen","Takasa Uygun:","Kimden"], index=False, header=True)
-# %%
-data_ = pd.read_excel("car_sheet.xlsx")
-# %%
-info = data_['Info']
-# %%
-# %%
-for index, value in pd.DataFrame(info).iterrows():
-    print(value[0].split())
-    # print(i.split('\n'))
+csvMerge_module(path)
 
 # %%
