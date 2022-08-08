@@ -23,7 +23,7 @@ print(df["Boya-değişen"].unique())
 
 # %%
 x = df.iloc[:,[0,7]].values #price ve yıl
-#x = df.iloc[:,[0,8]].values #price ve kilometr
+#x = df.iloc[:,[0,8]].values #price ve kilometre
 #x = df.iloc[:,[9,10]].values #motor hacmi ve motor gücü
 #x = df.iloc[:,[8,11]].values #price ve ort yakıt
 
