@@ -1,77 +1,70 @@
-#%%
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 15 04:18:20 2018
-
-@author: Ahmet Basol
-"""
-
-#1. kutuphaneler
+# %% Import library
+import pandas  as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
+import seaborn as sns
 
-#2. Veri Onisleme
+from matplotlib import colors
 
-#2.1. Veri Yukleme
-veriler = pd.read_csv('final_df.csv')
-#pd.read_csv("veriler.csv")
+# %%Import dataset
+#feature = [BURSA ,20645384,8/3/2022,Fiat,Linea,1.3 Multijet Pop,2017,149900,DÃ¼z,Dizel,Sedan,1248.00000,95,Ã–nden Ã‡ekiÅŸ,4.90000,45,1 deÄŸiÅŸen,Takasa Uygun,Galeriden]
+#lr.predict(feaet)
+df = pd.read_csv('final_df.csv')
+print('\nNumber of rows and columns in the data set: ',df.shape)
 
+def dummies(dataFrame):
+    df_1 = pd.get_dummies(dataFrame["Vites Tipi"])
+    df_2 = pd.get_dummies(dataFrame["YakÄ±t Tipi"])
+    df_3 = pd.get_dummies(dataFrame["Kasa Tipi"])
+    df_4 = pd.get_dummies(dataFrame["Ã‡ekiÅŸ"])
+    df_5 = pd.get_dummies(dataFrame["Takasa Uygun"])
+    df_6 = pd.get_dummies(dataFrame["Kimden"])
 
-#veri on isleme
-aylar = veriler[['Price']]
-#test
-print(aylar)
+    dataFrame.drop('Vites Tipi', inplace=True, axis=1)
+    dataFrame.drop('YakÄ±t Tipi', inplace=True, axis=1)
+    dataFrame.drop('Kasa Tipi', inplace=True, axis=1)
+    dataFrame.drop('Ã‡ekiÅŸ', inplace=True, axis=1)
+    dataFrame.drop('Takasa Uygun', inplace=True, axis=1)
+    dataFrame.drop('Kimden', inplace=True, axis=1)
 
-satislar = veriler[['YÄ±l']]
-print(satislar)
+    dataFrame = pd.concat([dataFrame, df_1], axis=1)
+    dataFrame = pd.concat([dataFrame, df_2], axis=1)
+    dataFrame = pd.concat([dataFrame, df_3], axis=1)
+    dataFrame = pd.concat([dataFrame, df_4], axis=1)
+    dataFrame = pd.concat([dataFrame, df_5], axis=1)
+    dataFrame = pd.concat([dataFrame, df_6], axis=1)
 
+    dataFrame.drop('-', inplace=True, axis=1)
 
-# %%verilerin egitim ve test icin bolunmesi
-from sklearn.model_selection import train_test_split
-x_train, x_test,y_train,y_test = train_test_split(aylar,satislar,test_size=0.33)
-
-#verilerin olceklenmesi
-from sklearn.preprocessing import StandardScaler
-
-
-sc = StandardScaler()
-X_train = sc.fit_transform(x_train)
-X_test = sc.fit_transform(x_test)
-Y_train = sc.fit_transform(y_train)
-Y_test = sc.fit_transform(y_test)
-
-
-print("asdas")
-# model inşası (linear regression)
-from sklearn.linear_model import LinearRegression
-
+    return dataFrame
 
 
+df = dummies(df)
+df.head()
 
-x_train = x_train.sort_index()
-y_train = y_train.sort_index()
+print(df.Marka.unique())
 
-lr = LinearRegression()
-lr.fit(x_train,y_train)
+# %%
+plt.figure(figsize=(20,8))
 
-tahmin = lr.predict(x_test)
+plt.subplot(1,2,1)
+plt.title('Car Price Distribution Plot')
+sns.distplot(df["Price"])
 
-tahmin = pd.DataFrame(tahmin).sort_index()
-y_test = y_test.sort_index()
-print(tahmin)
-plt.figure(figsize=(30, 10))
-plt.title("Linear Model Result")
-plt.plot(x_test, "-o")
-plt.plot(tahmin, "-*")
-plt.legend(["Pred", "Actual"])
-plt.grid(True)
+plt.subplot(1,2,2)
+plt.title('Car Price Spread')
+sns.boxplot(y=df["Price"])
+
 plt.show()
 
-print(x_train.shape)
-print(x_test.shape)
-print(y_train.shape)
-print(y_test.shape)
-print(tahmin.shape)
-plt.plot(x_train,y_train)
-plt.plot(x_test,tahmin)
+
+# %%
+""" for our visualization purpose will fit line using seaborn library only for bmi as independent variable 
+and charges as dependent variable"""
+cmap = colors.ListedColormap(["#682F2F", "#9E726F", "#D6B2B1", "#B9C0C9", "#9F8A78", "#F3AB60"])
+corrmat= df.corr()
+plt.figure(figsize=(50,50))
+sns.heatmap(corrmat,annot=True, cmap=cmap, center=0)
+plt.show()
+
+

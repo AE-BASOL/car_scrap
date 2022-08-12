@@ -19,7 +19,7 @@ print(df.head())
 print(df.info())
 
 
-print(df["Boya-değişen"].unique())
+print(df["Boya-deÄŸiÅŸen"].unique())
 
 # %%
 x = df.iloc[:,[0,7]].values #price ve yıl
@@ -60,10 +60,11 @@ plt.show()
 
 # %%
 # input matrix for segmentation
-x = df[['Price','Yıl','Ort. Yakıt Tüketimi']].values
+x = df[['Price','Yıl','Ort. YakÄ±t TÃ¼ketimi']].values
 # find the optimal number of clusters using elbow method  -- >This is for 3 features = [age,anual income,spending score]
 
 WCSS = []
+
 for i in range(1,11):
     model = KMeans(n_clusters = i,init = 'k-means++')
     model.fit(x)
