@@ -212,14 +212,14 @@ def csvMerge_module(path_csv):
         li.append(df)
 
     frame = pd.concat(li, axis=0, ignore_index=True)
-    frame.to_csv(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\final_df.csv', encoding="utf-8", index=None,
+    frame.to_csv(r'C:\Users\ahmet\Desktop\python_repo\car_scrap\final_df.csv', encoding="utf-8", index=None,
                  header=True)
 
 # %%
 initLink = ["https://www.arabam.com/ikinci-el/otomobil/fiat?searchText=otomobil&take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/renault?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/hyundai?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/ford?take=50&page={}", "https://www.arabam.com/ikinci-el/otomobil/honda?take=50&page={}", "https://www.arabam.com/ikinci-el/otomobil/bmw?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/mercedes-benz?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/opel?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/peugeot?take=50&page={}","https://www.arabam.com/ikinci-el/otomobil/toyota?take=50&page={}"]
-path = r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap' # use your path
+path = r'C:\Users\ahmet\Desktop\python_repo\car_scrap' # use your path
 
-for i in range(10,10,1):
+for i in range(6,10,1):
     page_link = []
     banner_link = []
     price = []
@@ -238,7 +238,7 @@ for i in range(10,10,1):
     print("{}.4 phase başarılı".format(i+1))
     oneHotCar_df = oneHot_module(main_df)
     print("{}.5 phase başarılı".format(i+1))
-    oneHotCar_df.to_csv(r'C:\Users\Ahmet.basol\Desktop\Projects\Idea\car_scrap\car_sheet{}.csv'.format(i+1), encoding="utf-8", index=None, header=True)
+    oneHotCar_df.to_csv(r'C:\Users\ahmet\Desktop\python_repo\car_scrap\car_sheet{}.csv'.format(i+1), encoding="utf-8", index=None, header=True)
 
 csvMerge_module(path)
 
